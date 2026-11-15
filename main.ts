@@ -102,4 +102,9 @@ await runBars({
     book.trades += 1;
     return [{ side: 'buy' as const, symbol: SYMBOL, notional_quote_units: notional, max_slippage_bps: MAX_SLIPPAGE_BPS }];
   },
+  // Diagnostics go to stderr (stdout carries replies only): one line when the window ends, so a
+  // graded run or a live race shows what the bot did without changing a single order.
+  onDone(state: BarsState, done) {
+    console.error(`cbbtc-burst-bot: ended at seq ${done.seq} (${done.reason}), trades ${book.trades}, cash ${state.cash}, equity ${state.equity}`);
+  },
 });
