@@ -18,6 +18,13 @@
 //     full-size fill actually pays, so a fill is never refused for slippage.
 //
 // Determinism: float64 arithmetic on + - * / only, no Math.random, no Date, no environment.
+//
+// Why these numbers:
+//   - 1% over 20 bars sits well clear of the ~7.6 bps mean absolute one-minute move, so it fires on
+//     real bursts rather than noise, and it has to clear the ~26 bps round trip by a wide margin.
+//   - 3 x ATR(20) on the trail lets a burst breathe without handing the gain back at the first dip.
+//   - 240 bars (four hours) is the time stop: a position that stops moving gets its capital back.
+//   - 30 bars of cooldown keeps a choppy stretch from re-entering into the same round-trip fees.
 
 import { runBars, BPS, type BarsState } from './vendor/makefun-bars.ts';
 
@@ -102,9 +109,16 @@ await runBars({
     book.trades += 1;
     return [{ side: 'buy' as const, symbol: SYMBOL, notional_quote_units: notional, max_slippage_bps: MAX_SLIPPAGE_BPS }];
   },
-  // Diagnostics go to stderr (stdout carries replies only): one line when the window ends, so a
-  // graded run or a live race shows what the bot did without changing a single order.
+  // Observability only: stdout is the harness's reply channel, so this single end-of-window line
+  // goes to stderr instead. It reports the last seq the window reached and why it stopped, the
+  // number of entries the bot decided, and the closing account the hook was handed, which is all a
+  // graded run or a live race needs to be read at a glance. Nothing here touches an order.
   onDone(state: BarsState, done) {
-    console.error(`cbbtc-burst-bot: ended at seq ${done.seq} (${done.reason}), trades ${book.trades}, cash ${state.cash}, equity ${state.equity}`);
+    const lastSeq = done.seq;
+    const stopReason = done.reason;
+    const entries = book.trades;
+    const finalCash = state.cash;
+    const finalEquity = state.equity;
+    console.error(`cbbtc-burst-bot finished: last seq ${lastSeq} (${stopReason}), entries ${entries}, cash ${finalCash} USDC, equity ${finalEquity} USDC`);
   },
 });
