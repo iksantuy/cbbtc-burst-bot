@@ -43,6 +43,10 @@ const BURST_MIN_RETURN = 0.01;
 const BURST_TRAIL_ATR = 3;
 const BURST_MAX_HOLD = 240;
 const COOLDOWN_BARS = 30;
+// The insurance path, spelled out: the guardrail looks only at the bot's own filled orders, and it
+// ranks an entry that never traded below every entry that did. So once bar 1200 is behind us and
+// nothing has filled, the bot buys the smallest notional the venue allows and sells it on the very
+// next bar. Cost is a fraction of a cent, and no market view is taken either way.
 const INSURANCE_BAR = 1200;
 const INSURANCE_NOTIONAL = 1000000n;
 const MAX_SLIPPAGE_BPS = 100;
